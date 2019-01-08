@@ -1,0 +1,261 @@
+---
+title: "statsDataCamp"
+author: "Brian Linn"
+date: "February 16, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(openintro)
+library(tidyr)
+data(hsb2)
+glimpse(hsb2)
+data(email50)
+glimpse(email50)
+```
+
+## R Markdown
+
+numerical - quantitative - numerical values
+        continuous - infinite values in a given range
+        discrete - specific set of numeric values that can be counted or enumerated
+        
+categorical - qualitative - limited number of distinct categories
+        ordinal - finite values in given range
+        common in subgroup analysis
+                filter for specific levels of categorical variable
+
+```{r cars}
+table(hsb2$schtyp)
+hsb2_public <- hsb2 %>%
+        filter(schtyp == "public")
+table(hsb2_public$schtyp) #private still shows - but with 0 members - the label of the level remains
+        
+#drop unused levels
+        hsb2_public$schtyp <- droplevels(hsb2_public$schtyp)
+        table(hsb2_public$schtyp)
+        #now only the levels with members remain
+        
+
+```
+public private 
+    168      32 
+== is logical test for 'is equal to'
+
+```{r pressure, echo=FALSE}
+3 %>% sum(4)
+#same output
+sum(3, 4)
+```
+ctrl + alt + I to add a chunk
+###discretizing a variable
+```{r}
+(avg_read <- mean(hsb2$read))
+#stored the mean of read in a variable
+#create a read category with manipulate function from dplyr
+hsb2 <- hsb2 %>% 
+        mutate(read_cat = ifelse(read < avg_read,
+                                "below average", "at or above average"))
+
+
+```
+
+###visualizing numerical data
+```{r}
+ggplot(data = hsb2, aes(x = science, y  = math)) +
+        geom_point()
+
+#now make the plot multivariate by using a third variable as color
+ggplot(data = hsb2, aes(x = science, y  = math, color = prog)) +
+        geom_point()
+```
+
+###observational studies and experiments
+###types of studies
+observational study
+        -collect data in way that does not interfere with how the the data arise
+        -only correlation can be inferred
+Experiment
+        -randomly assign subjects to treatments
+        -allows causation to be inferred
+
+screen time at bedtime and attention span
+observational- those who do and whose who do not wat at night
+        - then compare the average attention span of two groups
+experiment - randomly sample then assign to groups - the decision to use screens is imposed by researcher
+        - still compare at the end - but can infer causation due to equally distribution of confonding factors
+
+###Random sampling and random assignment
+random sampling - when subjects are selected randomly from the population - allows generalization to whole population
+
+random assignment - subjects assigned to treatments - allows causal inference
+
+###simpson's paradox
+should include all relevant variables - or there is risk of missing ar misclassifying a relationship
+variables
+
+explanatory (x1...xn)
+
+response (y)
+
+```{r}
+# Load packages
+library(dplyr)
+library(tidyr)
+
+ucb_admit <- as.data.frame(UCBAdmissions)
+# Count number of male and female applicants admitted
+ucb_counts <- ucb_admit %>%
+  count(Gender, Admit)
+
+# View result
+ucb_counts
+  
+# Spread the output across columns
+ucb_counts %>%
+  spread(Admit, n)
+
+#percentage admitted by gender
+ucb_admit %>%
+  # Table of counts of admission status and gender
+  count(Gender, Admit) %>%
+  # Spread output across columns based on admission status
+  spread(Admit, n) %>%
+  # Create new variable
+  mutate(Perc_Admit = Admitted / (Admitted + Rejected))
+
+#now add percentage admitted by department
+# Table of counts of admission status and gender for each department
+admit_by_dept <- ucb_admit %>%
+  count(Dept, Gender, Admit) %>%
+  spread(Admit, n)
+
+# View result
+admit_by_dept
+
+# Percentage of males admitted for each department
+admit_by_dept %>%
+  mutate(Perc_Admit = Admitted / (Admitted + Rejected))
+
+#controlling for department flips the relationship
+# more men admitted as a percent overall when dept not controlled
+# by department - more women as a percentage are admitted
+```
+
+####Sampling Strategies
+Why sample versus census?
+        too difficult and resource intensive
+        may not even be possible
+
+simple random sample
+        randomly choose so that any choice is equally likely
+
+stratified sample
+        first divide population into homogeneous groups - randomly sample from each strata
+                e.g. low medium high economic status - group then sample
+                
+cluster sample
+        randomly divide population into clusters then sample each cluster
+
+multistage sample
+        divide into clusters - randomly sample the clusters - then randomly sample observations from those clusters
+                used for economical reasons - divide the city into similar regions then sample from some regions as opposed to travelling to all regions
+
+###Sampling in R
+ctrl + alt + I inserts code chunk
+```{r}
+library(openintro)
+library(dplyr)
+data(county)
+#filter out DC
+county_nodc <- county %>% 
+        filter(state != "District of Columbia") %>% 
+        droplevels()
+
+#simple random sample
+county_srs <- county_nodc %>% 
+        sample_n(size = 150)
+
+glimpse(county_srs)
+
+county_srs %>% 
+        group_by(state) %>% 
+        count()
+
+#the srs did not result in an equal number of counties per state
+#for 3 counties per state use stratified sampling
+county_str <- county_nodc %>% 
+        group_by(state) %>% 
+        sample_n(size = 3)
+glimpse(county_str)
+
+county_str %>% count()
+
+
+# Simple random sample: states_srs
+states_srs <- us_regions %>%
+  sample_n(size = 8)
+
+# Count states by region
+states_srs %>%
+  group_by(region) %>%
+  count()
+#this resulted in 8 states from random regions
+
+# Stratified sample
+states_str <- us_regions %>%
+  group_by(region) %>%
+  sample_n(size = 2)
+
+# Count states by region
+states_str %>%
+  group_by(region) %>%
+  count()
+#this results in 2 states from each of 4 regions for 8 total states
+
+```
+
+
+###Principles of Experimental Design
+Control
+        compare treatment of interest to control group
+Randomize
+        randomly assign subjects to a treatment
+replicate
+        collect sufficiently large sample within study or repeat study
+block
+        account for confounding variables
+                group subjects into random blocks based on these variables
+                randomize within each block of treatment groups
+
+
+###Case study
+```{r}
+# Inspect variable types
+glimpse(evals)
+
+# Remove non-factor variables from this vector
+cat_vars <- c("rank", "ethnicity", "gender", "language",
+              "cls_level", "cls_profs", "cls_credits",
+              "pic_outfit", "pic_color")
+
+# Recode cls_students as cls_type: evals
+evals <- evals %>%
+  # Create new variable
+  mutate(cls_type = ifelse(cls_students < 19, "small", 
+                      ifelse(cls_students >59, "large", "midsize")))
+
+# Scatterplot of score vs. bty_avg
+ggplot(data = evals, aes(x = bty_avg, y = score)) + geom_point()
+
+# Scatterplot of score vs. bty_avg colored by cls_type
+ggplot(evals, aes(x = bty_avg, y = score, color = cls_type)) + 
+geom_point()
+
+
+
+```
+

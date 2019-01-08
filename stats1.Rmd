@@ -1,0 +1,142 @@
+---
+title: "corrRegressDataCamp"
+author: "Brian Linn"
+date: "February 24, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(DAAG)
+library(dplyr)
+library(ggplot2)
+library(openintro)
+```
+
+### Bivariate Relationships
+-Both variables are numerical 
+        -output is the response - y - dependent
+        -explanatory variables - inputs - x - independent or predictor         variables
+        
+        Response goes on y - vertical
+        Explanatory goes on x - horizontal
+
+ggplot
+
+```{r}
+data(possum)
+glimpse(possum)
+ggplot(data = possum, aes(y = totlngth, x = taill)) +
+        geom_point() +
+        scale_x_continuous("Length of Possum Tail (cm)") +
+        scale_y_continuous("Length of Possum Body (cm)")
+
+```
+
+Can think of boxplots as scatterpots
+        -with discretized explanatory variable
+
+```{r}
+#use cuts to break up the tail lengths into groups
+possum %>% ggplot(aes(y = totlngth, 
+                      x = cut(taill, breaks = 5))) +
+        geom_boxplot() +
+        scale_x_discrete("Length of Possum Tail (cm)") +
+        scale_y_continuous("Length of Possum Body (cm)")
+
+#class exercises with scatterplots
+data("ncbirths")
+glimpse(ncbirths)
+
+# Scatterplot of weight vs. weeks
+ggplot(data = ncbirths, aes(y = weight, x = weeks)) + 
+        geom_point()
+
+#boxplots as discretized scatterplots
+#variable on x-axis is discretized - with cut and #of breaks
+ncbirths %>% ggplot(aes(y = weight,
+                        x = cut(weeks, breaks = 5))) +
+        geom_boxplot()
+
+        
+```
+
+###Characterizing bivariate relationships
+look for
+        -form (linear, quadratic, non-linear)
+        -direction (positive or negative)
+        -strength (how much scatter/noise?)
+        -outliers
+        
+```{r}
+#creating scatterplots
+data("mammals")
+data("mlbBat10")
+data("bdims")
+data("smoking")
+glimpse(mammals)
+
+#with mammals - brainweight by body weight
+mammals %>% ggplot(aes(x = BodyWt, y = BrainWt)) +
+        geom_point()
+
+mammals %>% ggplot(aes(x = log(BodyWt), y = log(BrainWt))) +
+        geom_point()
+
+#baseball sluggin v on base percentage
+glimpse(mlbBat10)
+mlbBat10 %>% ggplot(aes(x = OBP, y = SLG)) +
+        geom_point()
+
+#bdims weight as function of height
+glimpse(bdims)
+bdims %>% ggplot(aes(x = hgt, y = wgt, color = factor(sex)))+
+        geom_point()
+
+#smoking amount smoked as predicted by age
+glimpse(smoking)
+smoking %>% ggplot(aes(x = age, 
+                       y = (amtWeekends + amtWeekdays))) +
+        geom_point()
+
+#characterizing scatterplots
+linear - negative - moderatley strong
+
+```
+
+```{r}
+#transformations
+mammals %>% ggplot(aes(x = BodyWt, y = BrainWt)) +
+        geom_point() +
+        scale_x_log10() +
+        scale_y_log10()
+
+mammals %>% ggplot(aes(x = BodyWt, y = BrainWt)) +
+        geom_point() +
+        coord_trans(x = "log10", y = "log10")
+```
+
+###Outliers
+observations that don't fit with the rest of the points
+
+```{r}
+mlbBat10 %>% ggplot(aes(x = SB, y = HR)) +
+        geom_point(alpha = 0.5, position = "jitter")
+
+#indentify the outliers
+mlbBat10 %>% 
+        filter(SB>60 | HR > 50) %>% 
+        select(name, team, position, SB, HR)
+#slg by OBP with at bats greater than or equal to 200
+mlbBat10 %>%
+        filter(AB > 199) %>% 
+        ggplot(aes(x = OBP, y = SLG)) +
+        geom_point()
+
+#find row with player(s) that have 200 at bats and OBP less than 0.2
+mlbBat10 %>% 
+        filter(AB > 199, OBP < 0.200) %>% 
+        select(name, team, position, AB, OBP)
+
+```
+
